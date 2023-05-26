@@ -40,6 +40,9 @@ final class WikiMediaClient(backend: SttpBackend[IO, Fs2Streams[IO]]):
     .flatMap(Stream.fromEither(_))
 
 object WikiMediaClient:
+  def resource: Resource[IO, WikiMediaClient] = 
+    HttpClientFs2Backend.resource[IO]().map(WikiMediaClient(_))
+
   given Configuration = Configuration.default
 
   enum WikiMediaError extends Exception:
@@ -97,8 +100,6 @@ object WikiMediaClient:
       uri: Option[String]
   ) derives ConfiguredCodec
 
-  /** Old and new revision IDs
-    */
   final case class Revision(
       `new`: Option[Int],
       old: Option[Int]
