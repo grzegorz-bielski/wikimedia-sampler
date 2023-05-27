@@ -1,4 +1,4 @@
-package wikimediasampler.producer
+package wikimediasampler
 
 import cats.effect.*
 import fs2.{io as _, *}
@@ -14,7 +14,8 @@ final class WikiMediaProducer(producer: KafkaProducer.PartitionsFor[IO, String, 
     _.evalMap: (key, value) => 
         producer.produce(ProducerRecords.one(ProducerRecord(topic, key, value)))   
     .groupWithin(500, 15.seconds)
-    .evalMap(_.sequence)
+    .evalMap:
+      _.sequence.onError(err => IO.println(s"Producer error: ${err.getMessage}"))
     .void
     // format: on
 

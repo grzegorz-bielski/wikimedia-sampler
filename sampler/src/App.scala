@@ -1,4 +1,4 @@
-package wikimediasampler.producer
+package wikimediasampler
 
 import cats.effect.*
 import cats.syntax.all.*

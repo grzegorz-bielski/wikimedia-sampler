@@ -1,4 +1,4 @@
-package wikimediasampler.producer
+package wikimediasampler
 
 import io.circe.literal.*
 import io.circe.syntax.*
