@@ -4,6 +4,8 @@ import cats.effect.*
 import cats.syntax.all.*
 import io.circe.syntax.*
 
+import wikimediasampler.producer.*
+
 object WikimediaSampler extends IOApp.Simple:
   def run = IO.println("starting") *>
     (WikiMediaClient.resource, WikiMediaProducer.resource).tupled

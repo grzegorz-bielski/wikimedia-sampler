@@ -1,46 +1,74 @@
 version: '3.8'
-# adapted from https://hub.docker.com/r/bitnami/kafka
-# https://raw.githubusercontent.com/bitnami/containers/main/bitnami/kafka/docker-compose.yml
-
-# cs launch --contrib kafka-topics -- --bootstrap-server localhost:9093 --topic first_topic --create --partitions 3 --replication-factor 1
-# producer: cs launch --contrib kafka-console-producer -- --bootstrap-server localhost:9093 --topic test-topic 
-# consumer: cs launch --contrib kafka-console-consumer -- --bootstrap-server localhost:9093 --topic test-topic --from-beginning
-
-# kafka-console-consumer.sh --bootstrap-server localhost:9093 --topic test-topic --from-beginning
-
-# see: https://www.confluent.io/blog/kafka-listeners-explained/
-
 services:
-  kkafka:
-    container_name: kkafka
-    image: docker.io/bitnami/kafka:3.4
+  # adapted from https://hub.docker.com/r/bitnami/kafka
+  # https://raw.githubusercontent.com/bitnami/containers/main/bitnami/kafka/docker-compose.yml
+
+  # cs launch --contrib kafka-topics -- --bootstrap-server localhost:9093 --topic first_topic --create --partitions 3 --replication-factor 1
+  # producer: cs launch --contrib kafka-console-producer -- --bootstrap-server localhost:9093 --topic test-topic 
+  # consumer: cs launch --contrib kafka-console-consumer -- --bootstrap-server localhost:9093 --topic test-topic --from-beginning
+
+  # kafka-console-consumer.sh --bootstrap-server localhost:9093 --topic test-topic --from-beginning
+
+  # see: https://www.confluent.io/blog/kafka-listeners-explained/
+
+  # kkafka:
+  #   container_name: kkafka
+  #   image: docker.io/bitnami/kafka:3.4
+  #   ports:
+  #     - "9092:9092"
+  #     - "9093:9093"
+  #     - "29092:29092"
+  #   volumes:
+  #     - "kafka_data:/bitnami"
+  #   environment:
+  #     KAFKA_CFG_NODE_ID: 1
+  #     KAFKA_CFG_BROKER_ID: 1
+  #     KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@${COMPOSE_LOCAL_IP:-127.0.0.1}:9094
+  #     KAFKA_CFG_PROCESS_ROLES: broker,controller
+  #     KAFKA_KRAFT_CLUSTER_ID: r4zt_wrqTRuT7W2NJsB_GA
+  #     ALLOW_PLAINTEXT_LISTENER: "yes"
+  #     KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  #     KAFKA_CFG_LISTENERS: CLIENT://:9092,EXTERNAL://:9093,CONTROLLER://:9094
+  #     KAFKA_CFG_ADVERTISED_LISTENERS: CLIENT://:9092,EXTERNAL://${COMPOSE_LOCAL_IP:-127.0.0.1}:9093
+  #     KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: "CLIENT"
+  # kafka-ui:
+  #   container_name: kafka-ui
+  #   image: 'provectuslabs/kafka-ui:latest'
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS=kkafka:9092
+  #     - KAFKA_CLUSTERS_0_NAME=r4zt_wrqTRuT7W2NJsB_GA
+
+  opensearch:
+    image: opensearchproject/opensearch:2.7.0
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true # disable https and logins
+      - compatibility.override_main_response_version=true
+      - bootstrap.memory_lock=true # Disable JVM heap memory swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
     ports:
-      - "9092:9092"
-      - "9093:9093"
-      - "29092:29092"
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
     volumes:
-      - "kafka_data:/bitnami"
-    environment:
-      KAFKA_CFG_NODE_ID: 1
-      KAFKA_CFG_BROKER_ID: 1
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@${COMPOSE_LOCAL_IP:-127.0.0.1}:9094
-      KAFKA_CFG_PROCESS_ROLES: broker,controller
-      KAFKA_KRAFT_CLUSTER_ID: r4zt_wrqTRuT7W2NJsB_GA
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CFG_LISTENERS: CLIENT://:9092,EXTERNAL://:9093,CONTROLLER://:9094
-      KAFKA_CFG_ADVERTISED_LISTENERS: CLIENT://:9092,EXTERNAL://${COMPOSE_LOCAL_IP:-127.0.0.1}:9093
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: "CLIENT"
-  kafka-ui:
-    container_name: kafka-ui
-    image: 'provectuslabs/kafka-ui:latest'
+      - opensearch_data:/usr/share/opensearch/data
+
+  # console at http://localhost:5601/app/dev_tools#/console
+  # https://www.youtube.com/watch?v=1Nt2lZFbkbg
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.7.0
     ports:
-      - "8080:8080"
+      - 5601:5601
+    expose:
+      - "5601"
     environment:
-      - KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS=kkafka:9092
-      - KAFKA_CLUSTERS_0_NAME=r4zt_wrqTRuT7W2NJsB_GA
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
 
 volumes:
+  opensearch_data:
+    driver: local
   kafka_data:
     driver: local

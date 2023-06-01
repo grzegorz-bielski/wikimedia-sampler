@@ -10,5 +10,7 @@
 //> using dep "io.circe::circe-literal:0.14.5"
 //> using dep "io.circe::circe-parser:0.14.5"
 
+//> using dep "org.opensearch.client:opensearch-java:2.4.0"
+
 // test deps
 //> using test.dep "org.scalameta::munit::1.0.0-M7"

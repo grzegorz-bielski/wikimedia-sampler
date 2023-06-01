@@ -1,4 +1,4 @@
-package wikimediasampler
+package wikimediasampler.producer
 
 import cats.effect.*
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend

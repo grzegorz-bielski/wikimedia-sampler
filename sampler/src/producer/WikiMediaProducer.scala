@@ -1,4 +1,4 @@
-package wikimediasampler
+package wikimediasampler.producer
 
 import cats.effect.*
 import fs2.{io as _, *}
