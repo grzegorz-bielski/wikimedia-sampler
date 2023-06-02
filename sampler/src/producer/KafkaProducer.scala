@@ -4,11 +4,11 @@ import cats.effect.*
 import fs2.{io as _, *}
 import cats.syntax.all.*
 import scala.concurrent.duration.*
-import fs2.kafka.*
+import fs2.kafka.{KafkaProducer as FS2KafkaProducer, *}
 
-import WikiMediaProducer.*
+import KafkaProducer.*
 
-final class WikiMediaProducer(producer: KafkaProducer.PartitionsFor[IO, String, String]):
+final class KafkaProducer(producer: FS2KafkaProducer.PartitionsFor[IO, String, String]):
   val produce: Pipe[IO, (String, String), Unit] = 
     // format: off
     _.evalMap: (key, value) => 
@@ -19,12 +19,12 @@ final class WikiMediaProducer(producer: KafkaProducer.PartitionsFor[IO, String, 
     .void
     // format: on
 
-object WikiMediaProducer:
+object KafkaProducer:
   val topic = "test-topic"
   val bootstrapServers = "localhost:9093"
   val producerSettings =
     ProducerSettings[IO, String, String]
       .withBootstrapServers(bootstrapServers)
 
-  def resource: Resource[IO, WikiMediaProducer] =
-    KafkaProducer.resource[IO, String, String](producerSettings).map(WikiMediaProducer(_))
+  def resource: Resource[IO, KafkaProducer] =
+    FS2KafkaProducer.resource[IO, String, String](producerSettings).map(KafkaProducer(_))

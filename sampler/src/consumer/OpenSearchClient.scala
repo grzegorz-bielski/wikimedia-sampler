@@ -1,8 +1,3 @@
-// create index
-// bulk add
-
-// https://opensearch.org/docs/latest/clients/java/#initializing-the-client-with-ssl-and-tls-enabled-using-apache-httpclient-5-transport
-
 import org.apache.hc.client5.http.auth.*
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
 import org.apache.hc.core5.http.HttpHost
