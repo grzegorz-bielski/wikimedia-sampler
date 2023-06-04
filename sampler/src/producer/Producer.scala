@@ -3,15 +3,18 @@ package wikimediasampler.producer
 import cats.effect.*
 import cats.syntax.all.*
 import io.circe.syntax.*
-import com.monovore.decline.*
-import com.monovore.decline.effect.*
 
-def produce: IO[Unit] =
+final case class ProducerOptions(topicName: String)
+
+def produce(opts: ProducerOptions): IO[ExitCode] =
+  import opts.*
+
   IO.println("starting") *>
     (WikiMediaClient.resource, KafkaProducer.resource).tupled
       .use: (client, producer) =>
         client.recentChanges
-          .map(msg => msg.user.getOrElse("no user") -> msg.asJson.noSpaces)
+          .map: msg =>
+            msg.user.getOrElse("no user") -> msg.asJson.noSpaces
           .through(producer.produce)
           .compile
           .drain
@@ -21,3 +24,4 @@ def produce: IO[Unit] =
             case _ =>
               IO.unit
       .guarantee(IO.println("ending"))
+      .as(ExitCode.Success)

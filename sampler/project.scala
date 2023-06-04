@@ -10,7 +10,7 @@
 //> using dep "io.circe::circe-literal:0.14.5"
 //> using dep "io.circe::circe-parser:0.14.5"
 
-//> using dep "org.opensearch.client:opensearch-java:2.4.0"
+//> using dep "org.opensearch.client:opensearch-java:2.5.0"
 //> using dep "com.monovore::decline-effect:2.4.1"
 
 // test deps

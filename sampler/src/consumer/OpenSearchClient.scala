@@ -1,3 +1,5 @@
+package wikimediasampler.consumer
+
 import org.apache.hc.client5.http.auth.*
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
 import org.apache.hc.core5.http.HttpHost
@@ -25,16 +27,16 @@ final class OpenSearchClient(client: OpenSearchAsyncClient):
       client.indices.create(_.index(name))
 
   def bulkAdd(index: String, docs: Vector[String]): IO[BulkResponse] =
+    lazy val ops = docs
+      .map: doc =>
+        BulkOperation
+          .Builder()
+          .index(_.index(index).document(doc))
+          .build
+      .asJava
+
     suspendFuture:
-      client.bulk:
-        _.operations:
-          docs
-            .map: doc =>
-              BulkOperation
-                .Builder()
-                .index(_.index(index).document(doc))
-                .build
-            .asJava
+      client.bulk(_.operations(ops))
 
 object OpenSearchClient:
   // TODO: parametrize host and credentials

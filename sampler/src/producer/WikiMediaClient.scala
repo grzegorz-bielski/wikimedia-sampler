@@ -8,7 +8,6 @@ import cats.syntax.all.*
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.impl.fs2.Fs2ServerSentEvents
 import sttp.model.sse.ServerSentEvent
-
 import io.circe.parser.*
 
 import WikiMediaClient.*
