@@ -12,6 +12,7 @@
 
 //> using dep "org.opensearch.client:opensearch-java:2.5.0"
 //> using dep "com.monovore::decline-effect:2.4.1"
+//> using dep "com.outr::scribe-slf4j:3.11.5"
 
 // test deps
 //> using test.dep "org.scalameta::munit::1.0.0-M7"

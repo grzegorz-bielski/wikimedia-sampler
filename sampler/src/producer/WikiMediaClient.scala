@@ -14,21 +14,17 @@ import WikiMediaClient.*
 
 final class WikiMediaClient(backend: SttpBackend[IO, Fs2Streams[IO]]):
   def recentChanges: Stream[IO, WikiMediaMessage] =
-    for
-      response <- Stream.eval:
-        // TODO: use safe `asStream` ?
+    Stream
+      .eval:
         basicRequest
           .get(uri"https://stream.wikimedia.org/v2/stream/recentchange")
           .response(asStreamUnsafe(Fs2Streams[IO]))
           .send(backend)
-
-      eventSource <- Stream.fromEither[IO]:
-        response.body.leftMap(WikiMediaError.ConnectionError(_))
-
-      msg <- eventSource
-        .through(Fs2ServerSentEvents.parse)
-        .through(toWikiMediaMessage)
-    yield msg
+      .map(_.body.leftMap(WikiMediaError.ConnectionError(_)))
+      .flatMap(Stream.fromEither[IO](_))
+      .flatten
+      .through(Fs2ServerSentEvents.parse[IO])
+      .through(toWikiMediaMessage)
 
   private val toWikiMediaMessage: Pipe[IO, ServerSentEvent, WikiMediaMessage] =
     _.collect:
