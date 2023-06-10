@@ -7,23 +7,25 @@ import scala.concurrent.duration.*
 import fs2.kafka.{KafkaProducer as FS2KafkaProducer, *}
 
 import KafkaProducer.*
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.syntax.*
 
-final class KafkaProducer(producer: FS2KafkaProducer.PartitionsFor[IO, String, String]):
-  def produce(topicName: String): Pipe[IO, (String, String), Unit] = 
+final class KafkaProducer[F[_]: Async: Logger](producer: FS2KafkaProducer.PartitionsFor[F, String, String]):
+  def produce(topicName: String): Pipe[F, (String, String), Unit] = 
     // format: off
     _.evalMap: (key, value) => 
         producer.produce(ProducerRecords.one(ProducerRecord(topicName, key, value)))   
     .groupWithin(500, 15.seconds)
     .evalMap:
-      _.sequence.onError(err => IO.println(s"Producer error: ${err.getMessage}"))
+      _.sequence.onError(err => info"Producer error: ${err.getMessage}")
     .void
     // format: on
 
 object KafkaProducer:
-  def resource(bootstrapServers: String): Resource[IO, KafkaProducer] =
-    val settings = ProducerSettings[IO, String, String]
+  def resource[F[_]: Async: Logger](bootstrapServers: String): Resource[F, KafkaProducer[F]] =
+    val settings = ProducerSettings[F, String, String]
       .withBootstrapServers(bootstrapServers)
 
     FS2KafkaProducer
-      .resource[IO, String, String](settings)
+      .resource[F, String, String](settings)
       .map(KafkaProducer(_))

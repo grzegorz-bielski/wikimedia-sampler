@@ -13,6 +13,7 @@
 //> using dep "org.opensearch.client:opensearch-java:2.5.0"
 //> using dep "com.monovore::decline-effect:2.4.1"
 //> using dep "com.outr::scribe-slf4j:3.11.5"
+//> using dep "org.typelevel::log4cats-slf4j:2.6.0"
 
 // test deps
 //> using test.dep "org.scalameta::munit::1.0.0-M7"

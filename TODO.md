@@ -1,2 +1,3 @@
 - [ ] opensearch consumer
-- [ ] graphana opensearch dashboard
+- [ ] produce-consume mode
+- [ ] graphana opensearch dashboard (?)

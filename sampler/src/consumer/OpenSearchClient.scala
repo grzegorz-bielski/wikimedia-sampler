@@ -13,20 +13,23 @@ import java.util.concurrent.CompletableFuture
 import cats.effect.kernel.Resource
 import cats.effect.IO
 import scala.jdk.CollectionConverters.*
+import cats.syntax.all.*
 
 import OpenSearchClient.*
+import cats.effect.kernel.Async
+import cats.effect.kernel.Sync
 
-final class OpenSearchClient(client: OpenSearchAsyncClient):
-  def indexExists(name: String): IO[Boolean] =
+final class OpenSearchClient[F[_]: Async](client: OpenSearchAsyncClient):
+  def indexExists(name: String): F[Boolean] =
     suspendFuture:
       client.indices.exists(_.index(name))
     .map(_.value)
 
-  def createIndex(name: String): IO[CreateIndexResponse] =
+  def createIndex(name: String): F[CreateIndexResponse] =
     suspendFuture:
       client.indices.create(_.index(name))
 
-  def bulkAdd(index: String, docs: Vector[String]): IO[BulkResponse] =
+  def bulkAdd(index: String, docs: Vector[String]): F[BulkResponse] =
     lazy val ops = docs
       .map: doc =>
         BulkOperation
@@ -40,10 +43,10 @@ final class OpenSearchClient(client: OpenSearchAsyncClient):
 
 object OpenSearchClient:
   // TODO: parametrize host and credentials
-  def resource: Resource[IO, OpenSearchClient] =
+  def resource[F[_]: Async]: Resource[F, OpenSearchClient[F]] =
     Resource
       .fromAutoCloseable:
-        IO.delay:
+        Sync[F].delay:
           val host = HttpHost("localhost", 9200)
           val credentialsProvider = BasicCredentialsProvider()
           credentialsProvider.setCredentials(
@@ -59,5 +62,5 @@ object OpenSearchClient:
       .map(OpenSearchAsyncClient(_))
       .map(OpenSearchClient(_))
 
-  private def suspendFuture[A](fut: => CompletableFuture[A]): IO[A] =
-    IO.fromCompletableFuture(IO.delay(fut))
+  private def suspendFuture[F[_]: Async, A](fut: => CompletableFuture[A]): F[A] =
+    Async[F].fromCompletableFuture(Sync[F].delay(fut))

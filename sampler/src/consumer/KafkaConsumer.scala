@@ -6,33 +6,35 @@ import cats.syntax.all.*
 import scala.concurrent.duration.*
 import fs2.kafka.{KafkaConsumer as FS2KafkaConsumer, *}
 import fs2.kafka.consumer.*
+import cats.Functor
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.syntax.*
 
 import KafkaConsumer.*
-
-final class KafkaConsumer(consumer: FS2KafkaConsumer[IO, String, String]):
-  def consume(topicName: String)(fn: Vector[String] => IO[Unit]): Stream[IO, Unit] =
+final class KafkaConsumer[F[_]: Async: Logger](consumer: FS2KafkaConsumer[F, String, String]):
+  def consume(topicName: String)(fn: Vector[String] => F[Unit]): Stream[F, Unit] =
     Stream(consumer)
-      .covary[IO]
+      .covary[F]
       .subscribeTo(topicName)
-      .evalTap(_ => IO.println(s"Subscribed to $topicName topic"))
+      .evalTap(_ => info"Subscribed to $topicName topic")
       .partitionedRecords
       .map:
         _
-          // .evalTap(s => IO.println(s.record.value))
+          .evalTap(s => debug"Received: ${s.record.value}")
           .groupWithin(200, 1.seconds)
           .evalMap: chunk =>
             fn(chunk.map(_.record.value).toVector).as(chunk.map(_.offset))
           .unchunks
       .parJoinUnbounded
-      .through(commitBatchWithin[IO](500, 15.seconds))
+      .through(commitBatchWithin[F](500, 15.seconds))
 
 object KafkaConsumer:
-  def resource(bootstrapServers: String, groupId: String): Resource[IO, KafkaConsumer] =
+  def resource[F[_]: Async: Logger](bootstrapServers: String, groupId: String): Resource[F, KafkaConsumer[F]] =
     val settings =
-      ConsumerSettings[IO, String, String]
+      ConsumerSettings[F, String, String]
         .withAutoOffsetReset(AutoOffsetReset.Earliest)
         .withBootstrapServers(bootstrapServers)
         .withGroupId(groupId)
 
     // TODO: graceful shutdown: https://fd4s.github.io/fs2-kafka/docs/consumers#graceful-shutdown
-    FS2KafkaConsumer.resource[IO, String, String](settings).map(KafkaConsumer(_))
+    FS2KafkaConsumer.resource[F, String, String](settings).map(KafkaConsumer(_))

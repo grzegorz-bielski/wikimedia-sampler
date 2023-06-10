@@ -11,30 +11,32 @@ import sttp.model.sse.ServerSentEvent
 import io.circe.parser.*
 
 import WikiMediaClient.*
+import cats.Monad
+import org.typelevel.log4cats.Logger
 
-final class WikiMediaClient(backend: SttpBackend[IO, Fs2Streams[IO]]):
-  def recentChanges: Stream[IO, WikiMediaMessage] =
+final class WikiMediaClient[F[_]: Async: Logger](backend: SttpBackend[F, Fs2Streams[F]]):
+  def recentChanges: Stream[F, WikiMediaMessage] =
     Stream
       .eval:
         basicRequest
           .get(uri"https://stream.wikimedia.org/v2/stream/recentchange")
-          .response(asStreamUnsafe(Fs2Streams[IO]))
+          .response(asStreamUnsafe(Fs2Streams[F]))
           .send(backend)
       .map(_.body.leftMap(WikiMediaError.ConnectionError(_)))
-      .flatMap(Stream.fromEither[IO](_))
+      .flatMap(Stream.fromEither[F](_))
       .flatten
-      .through(Fs2ServerSentEvents.parse[IO])
+      .through(Fs2ServerSentEvents.parse[F])
       .through(toWikiMediaMessage)
 
-  private val toWikiMediaMessage: Pipe[IO, ServerSentEvent, WikiMediaMessage] =
+  private val toWikiMediaMessage: Pipe[F, ServerSentEvent, WikiMediaMessage] =
     _.collect:
       case ServerSentEvent(Some(data), _, _, _) =>
         decode[WikiMediaMessage](data).leftMap(err => WikiMediaError.MalformedData(err.getMessage))
     .flatMap(Stream.fromEither(_))
 
 object WikiMediaClient:
-  def resource: Resource[IO, WikiMediaClient] =
-    HttpClientFs2Backend.resource[IO]().map(WikiMediaClient(_))
+  def resource[F[_]: Async: Logger]: Resource[F, WikiMediaClient[F]] =
+    HttpClientFs2Backend.resource[F]().map(WikiMediaClient(_))
 
   enum WikiMediaError extends Exception:
     case ConnectionError(cause: String)
