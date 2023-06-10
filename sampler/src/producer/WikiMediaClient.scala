@@ -8,11 +8,11 @@ import cats.syntax.all.*
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.impl.fs2.Fs2ServerSentEvents
 import sttp.model.sse.ServerSentEvent
+import cats.Monad
+import org.typelevel.log4cats.Logger
 import io.circe.parser.*
 
 import WikiMediaClient.*
-import cats.Monad
-import org.typelevel.log4cats.Logger
 
 final class WikiMediaClient[F[_]: Async: Logger](backend: SttpBackend[F, Fs2Streams[F]]):
   def recentChanges: Stream[F, WikiMediaMessage] =

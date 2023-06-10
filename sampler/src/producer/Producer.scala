@@ -12,7 +12,7 @@ final case class ProducerOptions(topicName: String, bootstrapServers: String)
 def produce[F[_]: Async: Logger](opts: ProducerOptions): F[ExitCode] =
   import opts.*
 
-  info"starting" *>
+  info"Starting producer" *>
     (WikiMediaClient.resource, KafkaProducer.resource(bootstrapServers)).tupled
       .use: (client, producer) =>
         client.recentChanges
@@ -26,5 +26,5 @@ def produce[F[_]: Async: Logger](opts: ProducerOptions): F[ExitCode] =
               info"MalformedData: $cause"
             case _ =>
               ().pure[F]
-      .guarantee(info"ending")
+      .guarantee(info"Shutting down producer")
       .as(ExitCode.Success)

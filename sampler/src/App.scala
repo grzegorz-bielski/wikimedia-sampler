@@ -2,6 +2,7 @@ package wikimediasampler
 
 import cats.effect.*
 import cats.syntax.all.*
+import cats.effect.syntax.*
 import com.monovore.decline.*
 import com.monovore.decline.effect.*
 import org.typelevel.log4cats.Logger
@@ -35,22 +36,30 @@ object SamplerApp
     .option[String]("group-id", "Kafka consumer group id")
     .withDefault("test-group-ll")
 
-  val producerOpts =
-    Opts.subcommand("produce", "Produce data from wikimedia stream"):
-      (kafkaTopicName, kafkaBootstrapServers)
-        .mapN(ProducerOptions.apply)
+  val producerOpts = (kafkaTopicName, kafkaBootstrapServers)
+    .mapN(ProducerOptions.apply)
+
+  val producerCmd =
+    Opts.subcommand("produce", "Produce data from wikimedia stream")(producerOpts)
 
   val consumerOpts =
-    Opts.subcommand("consume", "Consume data from wikimedia stream"):
-      (indexNameOpts, kafkaTopicName, kafkaBootstrapServers, groupIdOpts).mapN(ConsumerOptions.apply)
+    (indexNameOpts, kafkaTopicName, kafkaBootstrapServers, groupIdOpts).mapN(ConsumerOptions.apply)
 
-  val allOpts = producerOpts orElse consumerOpts
+  val consumerCmd =
+    Opts.subcommand("consume", "Consume data from wikimedia stream")(consumerOpts)
 
-  def main = allOpts.map: opts =>
+  val producerConsumerCmd = Opts.subcommand("produce-consume", "Produce and consume data from wikimedia stream"):
+    (producerOpts, consumerOpts).tupled
+
+  val allCmd = producerCmd orElse consumerCmd orElse producerConsumerCmd
+
+  def main = allCmd.map: cmd =>
     Slf4jLogger
       .create[IO]
       .flatMap:
         case given Logger[IO] =>
-          opts match
-            case opts: ProducerOptions => produce(opts)
-            case opts: ConsumerOptions => consume(opts)
+          cmd match
+            case cmd: ProducerOptions => produce(cmd)
+            case cmd: ConsumerOptions => consume(cmd)
+            case (producerCmd, consumerCmd) =>
+              (produce[IO](producerCmd) both consume[IO](consumerCmd)).as(ExitCode.Success)

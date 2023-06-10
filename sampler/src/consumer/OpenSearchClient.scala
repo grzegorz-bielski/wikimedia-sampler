@@ -11,14 +11,11 @@ import org.opensearch.client.opensearch.OpenSearchAsyncClient
 import org.opensearch.client.opensearch.core.bulk.*
 import java.util.concurrent.CompletableFuture
 import cats.effect.kernel.Resource
-import cats.effect.IO
+import cats.effect.*
 import scala.jdk.CollectionConverters.*
 import cats.syntax.all.*
-import cats.effect.kernel.Async
-import cats.effect.kernel.Sync
-import cats.ApplicativeError
-import cats.MonadThrow
-import cats.Show
+import cats.effect.kernel.*
+import cats.*
 import org.opensearch.client.opensearch._types.ErrorCause
 import org.opensearch.client.json.JsonpSerializer
 import jakarta.json.Json
