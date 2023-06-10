@@ -15,7 +15,7 @@ def consume[F[_]: Async: Logger](opts: ConsumerOptions): F[ExitCode] =
   // [x] 1. check if index exists, create if not
   // [x] 2. consume from kafka in batches
   // 3. index batches in opensearch (has to be independent)
-  // - fix failed to parse...
+  // - fix failed to parse... see StringSerializer
   // 4. commit offsets
 
   info"starting" *>
@@ -36,7 +36,7 @@ def consume[F[_]: Async: Logger](opts: ConsumerOptions): F[ExitCode] =
                   client
                     .bulkAdd(indexName, chunk)
                     // failed to parse...
-                    .flatTap(r => info"Indexed documents: ${r.items.asScala.map(_.error.reason())}")
+                    // .flatTap(r => info"Indexed documents: ${r.items.asScala.map(_.error.reason())}")
                     .void
               .compile
               .drain

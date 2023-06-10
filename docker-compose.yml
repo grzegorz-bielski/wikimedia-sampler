@@ -32,6 +32,7 @@ services:
       KAFKA_CFG_ADVERTISED_LISTENERS: CLIENT://:9092,EXTERNAL://${COMPOSE_LOCAL_IP:-127.0.0.1}:9093
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: "CLIENT"
+  # console at http://localhost:8080
   kafka-ui:
     container_name: kafka-ui
     image: 'provectuslabs/kafka-ui:latest'
